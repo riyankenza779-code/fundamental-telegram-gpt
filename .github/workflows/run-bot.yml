@@ -3,7 +3,9 @@ name: Run Fundamental Telegram Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "0 0 * * *"   # 07:00 WIB (Asia)
+    - cron: "0 12 * * *"  # 19:00 WIB (US)
+
 
 jobs:
   run-bot:
