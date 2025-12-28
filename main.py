@@ -14,46 +14,71 @@ CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 # SESSION DETECTION
 # =========================
 hour_utc = datetime.utcnow().hour
-if hour_utc < 7:
-    session = "PAGI (Asia Session)"
-else:
-    session = "MALAM (US Session)"
+session = "PAGI (Asia Session)" if hour_utc < 7 else "MALAM (US Session)"
 
 # =========================
-# ANALISIS GPT (LEVEL 5 + 6)
+# SEND TELEGRAM
 # =========================
-def get_analysis():
+def send_telegram(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, json={
+        "chat_id": CHAT_ID,
+        "text": text
+    })
+
+# =========================
+# GLOBAL MODE ANALYSIS (LEVEL 12)
+# =========================
+def get_global_mode():
     prompt = f"""
-Kamu adalah analis makro profesional.
+Tentukan GLOBAL MARKET MODE hari ini (RISK-ON / RISK-OFF / NEUTRAL).
 
-Buat UPDATE FUNDAMENTAL {session} dengan format SUPER RINGKAS (maksimal 4 poin + emoji).
+Berdasarkan:
+- Federal Reserve & ekspektasi suku bunga
+- Inflasi AS & yield obligasi
+- Sentimen risiko global & geopolitik
+- China (PBoC) dan ECB
 
-PAIR WAJIB:
-🟡 XAUUSD
-💶 EURUSD
-₿ BTCUSD
+Lalu jelaskan:
+- Penyebab utama (maksimal 3 poin)
+- Implikasi singkat untuk:
+  🟡 XAUUSD
+  💶 EURUSD
+  ₿ BTCUSD
 
-WAJIB LOGIC EVENT:
-- Jika H-1 FOMC → tulis **PRE-FOMC ALERT**
-- Jika hari FOMC → tulis **FOMC DAY – POTENSI VOLATILITAS**
-- Jika pasca FOMC → tulis **POST-FOMC IMPACT**
-- Jika tidak ada FOMC → tulis **NO MAJOR FED EVENT**
+FORMAT:
+🌍 GLOBAL MARKET MODE: ...
 
-ATURAN ISI:
-- Maksimal 4 poin TOTAL
-- Setiap poin boleh membahas lebih dari satu pair
-- Sertakan bias singkat (Bullish / Bearish / Netral)
-- Bahasa Indonesia
-- Fokus dampak ke harga
-- Tanpa entry / SL / TP
+Penyebab:
+- ...
+- ...
+- ...
 
-FORMAT WAJIB:
-📊 Fundamental Update
+Implikasi:
+🟡 XAUUSD: ...
+💶 EURUSD: ...
+₿ BTCUSD: ...
+"""
 
-1️⃣ 🟡 XAUUSD: ...
-2️⃣ 💶 EURUSD: ...
-3️⃣ ₿ BTCUSD: ...
-4️⃣ 🔔 Event: ...
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt
+    )
+    return response.output_text
+
+# =========================
+# PRE-FOMC ALERT CHECK (LEVEL 13)
+# =========================
+def check_pre_fomc():
+    prompt = """
+Apakah BESOK ada pengumuman kebijakan suku bunga Federal Reserve (FOMC)?
+
+Jawab dengan format TEGAS:
+- Jika YA, tulis:
+  YES
+  lalu buat pesan ALERT singkat (3–4 baris) tentang potensi dampak ke XAUUSD, EURUSD, dan BTC.
+- Jika TIDAK, jawab:
+  NO
 """
 
     response = client.responses.create(
@@ -61,24 +86,20 @@ FORMAT WAJIB:
         input=prompt
     )
 
-    return response.output_text
-
-# =========================
-# SEND TELEGRAM
-# =========================
-def send_telegram(text):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(
-        url,
-        json={
-            "chat_id": CHAT_ID,
-            "text": text
-        }
-    )
+    text = response.output_text.strip()
+    if text.startswith("YES"):
+        return "🚨 PRE-FOMC ALERT (H-1)\n\n" + text.replace("YES", "").strip()
+    return None
 
 # =========================
 # MAIN
 # =========================
 if __name__ == "__main__":
-    analysis = get_analysis()
-    send_telegram(analysis)
+    # 1️⃣ Kirim Global Market Mode (rutin)
+    global_update = get_global_mode()
+    send_telegram(f"📊 {session}\n\n{global_update}")
+
+    # 2️⃣ Kirim PRE-FOMC ALERT jika ada
+    alert = check_pre_fomc()
+    if alert:
+        send_telegram(alert)
