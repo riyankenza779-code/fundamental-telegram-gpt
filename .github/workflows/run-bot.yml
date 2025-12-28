@@ -3,11 +3,16 @@ name: Run Fundamental Telegram Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 1 * * *"   # tiap hari jam 08:00 WIB
+    - cron: "0 1 * * *" # tiap hari jam 08:00 WIB
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - name: Checkout repo
@@ -20,12 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests openai
+          pip install --upgrade pip
+          pip install openai requests
 
       - name: Run bot
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: |
-          python main.py
+        run: python main.py
