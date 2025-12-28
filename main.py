@@ -11,7 +11,7 @@ TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 # =========================
-# DETECT SESSION (PAGI / MALAM)
+# SESSION DETECTION
 # =========================
 hour_utc = datetime.utcnow().hour
 if hour_utc < 7:
@@ -20,34 +20,40 @@ else:
     session = "MALAM (US Session)"
 
 # =========================
-# ANALISIS GPT
+# ANALISIS GPT (LEVEL 5 + 6)
 # =========================
 def get_analysis():
     prompt = f"""
-Kamu adalah analis market profesional.
+Kamu adalah analis makro profesional.
 
 Buat UPDATE FUNDAMENTAL {session} dengan format SUPER RINGKAS (maksimal 4 poin + emoji).
 
-WAJIB bahas:
-🟡 XAUUSD (emas)
+PAIR WAJIB:
+🟡 XAUUSD
 💶 EURUSD
 ₿ BTCUSD
 
+WAJIB LOGIC EVENT:
+- Jika H-1 FOMC → tulis **PRE-FOMC ALERT**
+- Jika hari FOMC → tulis **FOMC DAY – POTENSI VOLATILITAS**
+- Jika pasca FOMC → tulis **POST-FOMC IMPACT**
+- Jika tidak ada FOMC → tulis **NO MAJOR FED EVENT**
+
 ATURAN ISI:
-- Maksimal 4 poin total (bukan per pair)
-- Setiap poin boleh membahas lebih dari 1 pair
-- Jika mendekati / hari H / pasca FOMC → WAJIB disebut
+- Maksimal 4 poin TOTAL
+- Setiap poin boleh membahas lebih dari satu pair
 - Sertakan bias singkat (Bullish / Bearish / Netral)
 - Bahasa Indonesia
-- Tanpa rekomendasi entry
+- Fokus dampak ke harga
+- Tanpa entry / SL / TP
 
-CONTOH FORMAT:
+FORMAT WAJIB:
 📊 Fundamental Update
 
 1️⃣ 🟡 XAUUSD: ...
 2️⃣ 💶 EURUSD: ...
 3️⃣ ₿ BTCUSD: ...
-4️⃣ 🔔 Event (FOMC / CPI / NFP): ...
+4️⃣ 🔔 Event: ...
 """
 
     response = client.responses.create(
