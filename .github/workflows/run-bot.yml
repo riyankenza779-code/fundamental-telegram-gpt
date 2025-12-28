@@ -1,32 +1,54 @@
-name: Run Fundamental Telegram Bot
+import os
+import requests
+from openai import OpenAI
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 1 * * *" # tiap hari jam 08:00 WIB
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
-jobs:
-  run-bot:
-    runs-on: ubuntu-latest
+client = OpenAI(api_key=OPENAI_KEY)
 
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+def ask_gpt(prompt):
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt
+    )
+    return response.output_text
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+def send_telegram(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
+    requests.post(url, json=payload)
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+def generate_analysis():
+    prompt = """
+Buat analisa fundamental HARIAN secara RINGKAS & PROFESIONAL untuk:
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install openai requests
+- XAUUSD
+- EURUSD
+- GBPUSD
+- BTCUSD
 
-      - name: Run bot
-        run: python main.py
+Gunakan struktur:
+1. Kondisi USD & Sentimen Global
+2. Bank Sentral (Fed, ECB, BoE)
+3. Data Inflasi & Suku Bunga
+4. Geopolitik / Risk Sentiment
+5. Event besar terdekat (FOMC / CPI / NFP jika ada)
+
+Tambahkan:
+- Bias trading singkat (Bullish / Bearish / Neutral)
+- Fokus ke FOMC tanggal 31 jika relevan
+
+Bahasa Indonesia.
+Tidak overclaim. Tidak beri entry price.
+"""
+    return ask_gpt(prompt)
+
+if __name__ == "__main__":
+    analysis = generate_analysis()
+    send_telegram("📊 *Fundamental Market Update*\n\n" + analysis)
