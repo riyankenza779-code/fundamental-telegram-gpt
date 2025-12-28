@@ -1,25 +1,20 @@
-from openai import OpenAI
-import os
-import requests
+response = client.responses.create(
+    model="gpt-4.1-mini",
+    input="""
+Buat analisa fundamental XAUUSD hari ini secara ringkas dan profesional (maksimal 4 poin).
 
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+WAJIB mencakup:
+1. Kondisi USD dan arah kebijakan Federal Reserve terbaru
+2. Inflasi AS dan ekspektasi suku bunga
+3. Geopolitik global sebagai faktor safe haven
+4. Jika sedang mendekati, berlangsung, atau baru selesai FOMC:
+   - Sikap pasar (risk-on / risk-off / wait and see)
+   - Potensi dampak keputusan FOMC ke XAUUSD
+   - Bias XAUUSD (Bullish / Bearish / Netral)
 
-def get_analysis():
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        input="Berikan analisa fundamental XAUUSD hari ini secara ringkas, fokus USD, Fed, inflasi, dan geopolitik."
-    )
-    return response.output_text
-
-def send_telegram(text):
-    token = os.environ["TELEGRAM_BOT_TOKEN"]
-    chat_id = os.environ["TELEGRAM_CHAT_ID"]
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    requests.post(url, json={
-        "chat_id": chat_id,
-        "text": text
-    })
-
-if __name__ == "__main__":
-    analysis = get_analysis()
-    send_telegram(analysis)
+Catatan penting:
+- Update otomatis, tidak terikat tanggal tertentu
+- Gunakan bahasa Indonesia
+- Ringkas, objektif, tanpa rekomendasi entry
+"""
+)
