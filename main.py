@@ -1,47 +1,25 @@
+from openai import OpenAI
 import os
 import requests
-import openai
-import datetime
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-openai.api_key = OPENAI_API_KEY
+def get_analysis():
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Kamu adalah analis fundamental XAUUSD."},
+            {"role": "user", "content": "Berikan analisa fundamental XAUUSD hari ini secara ringkas dalam bahasa Indonesia."}
+        ]
+    )
+    return response.choices[0].message.content
 
 def send_telegram(text):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(url, data={
-        "chat_id": CHAT_ID,
-        "text": text
-    })
+    token = os.environ["TELEGRAM_BOT_TOKEN"]
+    chat_id = os.environ["TELEGRAM_CHAT_ID"]
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    requests.post(url, json={"chat_id": chat_id, "text": text})
 
-today = datetime.date.today().strftime("%d %B %Y")
-
-prompt = f"""
-Kamu adalah analis makroekonomi & emas profesional.
-
-Buat laporan FUNDAMENTAL HARIAN (ringkas, bahasa Indonesia) untuk tanggal {today}.
-
-Fokus:
-- Ekonomi US
-- Eurozone
-- China
-
-Tampilkan:
-• Ringkasan makro (maks 3 poin)
-• Sentimen pasar
-• Dampak USD
-• Dampak XAU/USD
-• Bias XAU/USD
-
-Gunakan format singkat (1 layar Telegram).
-"""
-
-response = openai.ChatCompletion.create(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": prompt}]
-)
-
-analysis = response.choices[0].message.content
-send_telegram(analysis)
+if __name__ == "__main__":
+    analysis = get_analysis()
+    send_telegram(analysis)
